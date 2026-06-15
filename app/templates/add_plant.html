@@ -39,7 +39,7 @@
                                     <p>
                                         <strong>${plant.common_name || plant.scientific_name}</strong>
                                         (${plant.scientific_name})
-                                        <button class="select-plant" data-name="${plant.common_name || plant.scientific_name}" data-wiki="${plant.links.plant || ''}">Select</button>
+                                        <button class="select-plant" data-name="${plant.common_name || plant.scientific_name}" data-wiki="https://en.wikipedia.org/wiki/${plant.scientific_name.replace(/ /g, '_')}">Select</button>
                                     </p>
                                 `;
                                 resultsDiv.appendChild(plantDiv);
