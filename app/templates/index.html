@@ -1,11 +1,21 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hello World</title>
-</head>
-<body>
-    <h1>Hello, World!</h1>
-</body>
-</html>
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>My Found Plants</h1>
+    <div class="plant-list">
+        {% for plant in plants %}
+            <div class="plant-item">
+                <h2>{{ plant.name }}</h2>
+                {% if plant.photo_filename %}
+                    <img src="{{ url_for('static', filename='uploads/' + plant.photo_filename) }}" alt="{{ plant.name }}" width="200">
+                {% endif %}
+                {% if plant.wiki_link %}
+                    <p><a href="{{ plant.wiki_link }}" target="_blank">Wikipedia Page</a></p>
+                {% endif %}
+            </div>
+            <hr>
+        {% else %}
+            <p>You haven't added any plants yet. <a href="{{ url_for('add_plant') }}">Add one now!</a></p>
+        {% endfor %}
+    </div>
+{% endblock %}

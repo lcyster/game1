@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>Add a New Plant</h1>
+    
+    <div id="plant-search">
+        <h2>Search for a Plant</h2>
+        <input type-="text" id="search-input" placeholder="Enter a plant name">
+        <button id="search-button">Search</button>
+        <div id="search-results"></div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+        <label for="name">Plant Name:</label><br>
+        <input type="text" id="name" name="name" required><br><br>
+        
+        <label for="wiki_link">Wikipedia Link:</label><br>
+        <input type="url" id="wiki_link" name="wiki_link"><br><br>
+        
+        <label for="photo">Photo:</label><br>
+        <input type="file" id="photo" name="photo" accept="image/*"><br><br>
+        
+        <button type="submit">Add Plant</button>
+    </form>
+
+    <script>
+        document.getElementById('search-button').addEventListener('click', () => {
+            const plantName = document.getElementById('search-input').value;
+            if (plantName) {
+                fetch(`/api/plant-info/${plantName}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const resultsDiv = document.getElementById('search-results');
+                        resultsDiv.innerHTML = '';
+                        if (data.data && data.data.length > 0) {
+                            data.data.forEach(plant => {
+                                const plantDiv = document.createElement('div');
+                                plantDiv.innerHTML = `
+                                    <p>
+                                        <strong>${plant.common_name || plant.scientific_name}</strong>
+                                        (${plant.scientific_name})
+                                        <button class="select-plant" data-name="${plant.common_name || plant.scientific_name}" data-wiki="${plant.links.plant || ''}">Select</button>
+                                    </p>
+                                `;
+                                resultsDiv.appendChild(plantDiv);
+                            });
+                        } else {
+                            resultsDiv.innerHTML = '<p>No plants found.</p>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        const resultsDiv = document.getElementById('search-results');
+                        resultsDiv.innerHTML = '<p>Error fetching plant data.</p>';
+                    });
+            }
+        });
+
+        document.getElementById('search-results').addEventListener('click', (event) => {
+            if (event.target.classList.contains('select-plant')) {
+                const name = event.target.getAttribute('data-name');
+                const wikiLink = event.target.getAttribute('data-wiki');
+                
+                document.getElementById('name').value = name;
+                document.getElementById('wiki_link').value = wikiLink;
+            }
+        });
+    </script>
+{% endblock %}
