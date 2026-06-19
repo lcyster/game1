@@ -58,12 +58,24 @@ def get_plant_info(plant_name):
     if not TREFLE_API_KEY:
         return {"error": "Trefle API key not configured."}
 
-    url = f"https://trefle.io/api/v1/plants/search?token={TREFLE_API_KEY}&q={plant_name}"
+    search_url = f"https://trefle.io/api/v1/plants/search?token={TREFLE_API_KEY}&q={plant_name}"
     
     try:
-        response = requests.get(url)
-        response.raise_for_status()  # Raise an exception for bad status codes
-        return response.json()
+        search_response = requests.get(search_url)
+        search_response.raise_for_status()
+        search_results = search_response.json()
+
+        if not search_results['data']:
+            return {"error": "Plant not found."}
+
+        plant_slug = search_results['data'][0]['slug']
+        
+        species_url = f"https://trefle.io/api/v1/species/{plant_slug}?token={TREFLE_API_KEY}"
+        species_response = requests.get(species_url)
+        species_response.raise_for_status()
+        species_data = species_response.json()
+
+        return species_data
     except requests.exceptions.RequestException as e:
         return {"error": str(e)}
 

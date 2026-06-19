@@ -21,6 +21,16 @@
                 <p><strong>Scientific Name:</strong> {{ plant_info.scientific_name }}</p>
                 <p><strong>Family:</strong> {{ plant_info.family }}</p>
                 <p><strong>Genus:</strong> {{ plant_info.genus }}</p>
+
+                <h3>Distribution</h3>
+                {% if trefle_data.data.distributions %}
+                    {% for dist_type, zones in trefle_data.data.distributions.items() %}
+                        <p><strong>{{ dist_type|capitalize }}:</strong> {{ zones|join(', ') }}</p>
+                    {% endfor %}
+                {% else %}
+                    <p>No distribution information available.</p>
+                {% endif %}
+
             {% else %}
                 <p>No additional information available.</p>
             {% endif %}
