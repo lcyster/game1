@@ -5,8 +5,8 @@
 
     <div class="plant-overview">
         <div class="plant-image">
-            {% if image_url %}
-                <img src="{{ image_url }}" alt="{{ plant.name }}">
+            {% if plant.photo_filename %}
+                <img src="{{ url_for('static', filename=plant.photo_filename) }}" alt="{{ plant.name }}">
             {% else %}
                 <img src="https://via.placeholder.com/300x300.png?text=No+Image" alt="No Image Available">
             {% endif %}
@@ -17,14 +17,14 @@
             <p>{{ wiki_summary }}</p>
 
             {% if trefle_data and trefle_data.data %}
-                {% set plant_info = trefle_data.data[0] %}
+                {% set plant_info = trefle_data.data %}
                 <p><strong>Common Name:</strong> {{ plant_info.common_name }}</p>
                 <p><strong>Scientific Name:</strong> {{ plant_info.scientific_name }}</p>
-                <p><strong>Family:</strong> {{ plant_info.family }}</p>
-                <p><strong>Genus:</strong> {{ plant_info.genus }}</p>
+                <p><strong>Family:</strong> {{ plant_info.family.name }}</p>
+                <p><strong>Genus:</strong> {{ plant_info.genus.name }}</p>
 
                 <h3>Distribution</h3>
-                {% if plant_info.get('distribution') and plant_info.distribution.get('native') %}
+                {% if plant_info.distribution.native %}
                     <p><strong>Native To:</strong> {{ plant_info.distribution.native|join(', ') }}</p>
                     <p>This plant is native to {{ plant_info.distribution.native|length }} regions, making it {% if plant_info.distribution.native|length > 10 %}very common.{% elif plant_info.distribution.native|length > 5 %}moderately common.{% else %}relatively rare.{% endif %}</p>
                 {% else %}

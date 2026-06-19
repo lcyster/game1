@@ -29,7 +29,7 @@
                                     <p>
                                         <strong>${plant.common_name || plant.scientific_name}</strong>
                                         (${plant.scientific_name})
-                                        <button class="select-plant" data-name="${plant.common_name || plant.scientific_name}" data-scientific-name="${plant.scientific_name}" data-image-url="${plant.image_url}">Select</button>
+                                        <button class="select-plant" data-name="${plant.common_name || plant.scientific_name}" data-scientific-name="${plant.scientific_name}">Select</button>
                                     </p>
                                 `;
                                 resultsDiv.appendChild(plantDiv);
@@ -58,7 +58,6 @@
             if (event.target.classList.contains('select-plant')) {
                 const name = event.target.getAttribute('data-name');
                 const scientificName = event.target.getAttribute('data-scientific-name');
-                const imageUrl = event.target.getAttribute('data-image-url');
 
                 fetch('/api/add-plant-from-trefle', {
                     method: 'POST',
@@ -67,8 +66,7 @@
                     },
                     body: JSON.stringify({ 
                         name: name,
-                        scientific_name: scientificName,
-                        image_url: imageUrl
+                        scientific_name: scientificName
                     })
                 })
                 .then(response => response.json())

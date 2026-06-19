@@ -3,15 +3,12 @@
 {% block content %}
     <h1>My Found Plants</h1>
     <div class="plant-grid">
-        {% for data in plant_data %}
+        {% for plant in plants %}
             <div class="plant-item">
-                <a href="{{ url_for('plant_overview', plant_id=data.plant.id) }}">
-                    <h2>{{ data.plant.name }}</h2>
-                    {% if data.trefle_data and data.trefle_data.data and data.trefle_data.data[0].scientific_name %}
-                        <p><em>{{ data.trefle_data.data[0].scientific_name }}</em></p>
-                    {% endif %}
-                    {% if data.image_url %}
-                        <img src="{{ data.image_url }}" alt="{{ data.plant.name }}" width="200">
+                <a href="{{ url_for('plant_overview', plant_id=plant.id) }}">
+                    <h2>{{ plant.name }}</h2>
+                    {% if plant.photo_filename %}
+                        <img src="{{ url_for('static', filename=plant.photo_filename) }}" alt="{{ plant.name }}" width="200">
                     {% else %}
                         <img src="https://via.placeholder.com/200x200.png?text=No+Image" alt="No Image Available">
                     {% endif %}
