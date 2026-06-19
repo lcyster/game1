@@ -5,27 +5,17 @@
     
     <div id="plant-search">
         <h2>Search for a Plant</h2>
-        <input type-="text" id="search-input" placeholder="Enter a plant name">
+        <input type="text" id="search-input" placeholder="Enter a plant name">
         <button id="search-button">Search</button>
         <div id="search-results"></div>
     </div>
 
-    <form method="post" enctype="multipart/form-data">
-        <label for="name">Plant Name:</label><br>
-        <input type="text" id="name" name="name" required><br><br>
-        
-        <label for="wiki_link">Wikipedia Link:</label><br>
-        <input type="url" id="wiki_link" name="wiki_link"><br><br>
-        
-        <label for="photo">Photo:</label><br>
-        <input type="file" id="photo" name="photo" accept="image/*"><br><br>
-        
-        <button type="submit">Add Plant</button>
-    </form>
-
     <script>
-        document.getElementById('search-button').addEventListener('click', () => {
-            const plantName = document.getElementById('search-input').value;
+        const searchInput = document.getElementById('search-input');
+        const searchButton = document.getElementById('search-button');
+
+        const performSearch = () => {
+            const plantName = searchInput.value;
             if (plantName) {
                 fetch(`/api/plant-info/${plantName}`)
                     .then(response => response.json())
@@ -39,7 +29,7 @@
                                     <p>
                                         <strong>${plant.common_name || plant.scientific_name}</strong>
                                         (${plant.scientific_name})
-                                        <button class="select-plant" data-name="${plant.common_name || plant.scientific_name}" data-wiki="https://en.wikipedia.org/wiki/${plant.scientific_name.replace(/ /g, '_')}">Select</button>
+                                        <button class="select-plant" data-name="${plant.common_name || plant.scientific_name}" data-scientific-name="${plant.scientific_name}" data-image-url="${plant.image_url}">Select</button>
                                     </p>
                                 `;
                                 resultsDiv.appendChild(plantDiv);
@@ -54,15 +44,42 @@
                         resultsDiv.innerHTML = '<p>Error fetching plant data.</p>';
                     });
             }
+        };
+
+        searchButton.addEventListener('click', performSearch);
+
+        searchInput.addEventListener('keyup', (event) => {
+            if (event.key === 'Enter') {
+                performSearch();
+            }
         });
 
         document.getElementById('search-results').addEventListener('click', (event) => {
             if (event.target.classList.contains('select-plant')) {
                 const name = event.target.getAttribute('data-name');
-                const wikiLink = event.target.getAttribute('data-wiki');
-                
-                document.getElementById('name').value = name;
-                document.getElementById('wiki_link').value = wikiLink;
+                const scientificName = event.target.getAttribute('data-scientific-name');
+                const imageUrl = event.target.getAttribute('data-image-url');
+
+                fetch('/api/add-plant-from-trefle', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        name: name,
+                        scientific_name: scientificName,
+                        image_url: imageUrl
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.url) {
+                        window.location.href = data.url;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
             }
         });
     </script>

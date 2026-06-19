@@ -3,6 +3,32 @@ body {
     margin: 20px;
 }
 
+.plant-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.plant-item {
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    padding: 10px;
+    text-align: center;
+}
+
+.plant-item img {
+    max-width: 100%;
+    border-radius: 10px;
+}
+
+.plant-item h2 {
+    margin-top: 0;
+}
+
+.plant-item p {
+    margin-bottom: 0;
+}
+
 .plant-overview {
     display: flex;
     gap: 20px;

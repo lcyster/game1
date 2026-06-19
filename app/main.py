@@ -1,5 +1,6 @@
 import os
 import requests
+import wikipedia
 from flask import Flask, jsonify, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
@@ -25,32 +26,79 @@ class Plant(db.Model):
 @app.route('/')
 def index():
     plants = Plant.query.all()
-    return render_template('index.html', plants=plants)
+    plant_data = []
+    for plant in plants:
+        trefle_data = get_plant_info(plant.name)
+        
+        scientific_name = None
+        if trefle_data and trefle_data.get('data') and len(trefle_data['data']) > 0:
+            scientific_name = trefle_data['data'][0].get('scientific_name')
+        
+        wiki_data = get_wiki_data(scientific_name or plant.name)
 
-@app.route('/add', methods=['GET', 'POST'])
+        image_url = None
+        if trefle_data and trefle_data.get('data') and len(trefle_data['data']) > 0 and trefle_data['data'][0].get('image_url'):
+            image_url = trefle_data['data'][0]['image_url']
+        elif wiki_data['image']:
+            image_url = wiki_data['image']
+        elif plant.photo_filename:
+            image_url = url_for('static', filename='uploads/' + plant.photo_filename)
+
+        plant_data.append({'plant': plant, 'trefle_data': trefle_data, 'image_url': image_url})
+    return render_template('index.html', plant_data=plant_data)
+
+@app.route('/add')
 def add_plant():
-    if request.method == 'POST':
-        name = request.form['name']
-        wiki_link = request.form['wiki_link']
-        photo = request.files['photo']
-        
-        photo_filename = None
-        if photo:
-            photo_filename = secure_filename(photo.filename)
-            photo.save(os.path.join(app.config['UPLOAD_FOLDER'], photo_filename))
-
-        new_plant = Plant(name=name, wiki_link=wiki_link, photo_filename=photo_filename)
-        db.session.add(new_plant)
-        db.session.commit()
-        return redirect(url_for('plant_overview', plant_id=new_plant.id))
-        
     return render_template('add_plant.html')
+
+@app.route('/api/add-plant-from-trefle', methods=['POST'])
+def add_plant_from_trefle():
+    data = request.json
+    name = data.get('name')
+    scientific_name = data.get('scientific_name')
+    image_url = data.get('image_url')
+
+    new_plant = Plant(name=name, photo_filename=image_url, wiki_link=f"https://en.wikipedia.org/wiki/{scientific_name.replace(' ', '_')}")
+    db.session.add(new_plant)
+    db.session.commit()
+
+    return jsonify({'url': url_for('plant_overview', plant_id=new_plant.id)})
 
 @app.route('/plant/<int:plant_id>')
 def plant_overview(plant_id):
     plant = Plant.query.get_or_404(plant_id)
     trefle_data = get_plant_info(plant.name)
-    return render_template('plant_overview.html', plant=plant, trefle_data=trefle_data)
+    
+    scientific_name = None
+    if trefle_data and trefle_data.get('data') and len(trefle_data['data']) > 0:
+        scientific_name = trefle_data['data'][0].get('scientific_name')
+
+    wiki_data = get_wiki_data(scientific_name or plant.name)
+    wiki_summary = wiki_data['summary']
+
+    image_url = None
+    if trefle_data and trefle_data.get('data') and len(trefle_data['data']) > 0 and trefle_data['data'][0].get('image_url'):
+        image_url = trefle_data['data'][0]['image_url']
+    elif wiki_data['image']:
+        image_url = wiki_data['image']
+    elif plant.photo_filename:
+        image_url = url_for('static', filename='uploads/' + plant.photo_filename)
+
+    return render_template('plant_overview.html', plant=plant, trefle_data=trefle_data, wiki_summary=wiki_summary, image_url=image_url)
+
+def get_wiki_data(plant_name):
+    try:
+        page = wikipedia.page(plant_name, auto_suggest=False)
+        summary = wikipedia.summary(plant_name, sentences=2)
+        image = page.images[0] if page.images else None
+        return {'summary': summary, 'image': image}
+    except wikipedia.exceptions.PageError:
+        return {'summary': "Could not find a Wikipedia page for this plant.", 'image': None}
+    except wikipedia.exceptions.DisambiguationError as e:
+        return {'summary': f"Multiple Wikipedia pages found. Please be more specific: {e.options}", 'image': None}
+    except requests.exceptions.JSONDecodeError:
+        return {'summary': "Could not parse the response from Wikipedia.", 'image': None}
+
 
 TREFLE_API_KEY = os.environ.get('TREFLE_API_KEY')
 
@@ -68,15 +116,9 @@ def get_plant_info(plant_name):
         if not search_results['data']:
             return {"error": "Plant not found."}
 
-        plant_slug = search_results['data'][0]['slug']
-        
-        species_url = f"https://trefle.io/api/v1/species/{plant_slug}?token={TREFLE_API_KEY}"
-        species_response = requests.get(species_url)
-        species_response.raise_for_status()
-        species_data = species_response.json()
-
-        return species_data
+        return search_results
     except requests.exceptions.RequestException as e:
+        print(f"Error fetching plant data: {e}")
         return {"error": str(e)}
 
 @app.route('/api/plant-info/<plant_name>')
