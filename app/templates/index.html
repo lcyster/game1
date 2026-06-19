@@ -5,7 +5,7 @@
     <div class="plant-list">
         {% for plant in plants %}
             <div class="plant-item">
-                <h2>{{ plant.name }}</h2>
+                <h2><a href="{{ url_for('plant_overview', plant_id=plant.id) }}">{{ plant.name }}</a></h2>
                 {% if plant.photo_filename %}
                     <img src="{{ url_for('static', filename='uploads/' + plant.photo_filename) }}" alt="{{ plant.name }}" width="200">
                 {% endif %}

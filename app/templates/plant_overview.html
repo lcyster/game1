@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>{{ plant.name }}</h1>
+
+    <div class="plant-overview">
+        <div class="plant-image">
+            {% if trefle_data and trefle_data.data and trefle_data.data[0].image_url %}
+                <img src="{{ trefle_data.data[0].image_url }}" alt="{{ plant.name }}">
+            {% elif plant.photo_filename %}
+                <img src="{{ url_for('static', filename='uploads/' + plant.photo_filename) }}" alt="{{ plant.name }}">
+            {% else %}
+                <img src="https://via.placeholder.com/300x300.png?text=No+Image" alt="No Image Available">
+            {% endif %}
+        </div>
+
+        <div class="plant-details">
+            {% if trefle_data and trefle_data.data %}
+                {% set plant_info = trefle_data.data[0] %}
+                <p><strong>Common Name:</strong> {{ plant_info.common_name }}</p>
+                <p><strong>Scientific Name:</strong> {{ plant_info.scientific_name }}</p>
+                <p><strong>Family:</strong> {{ plant_info.family }}</p>
+                <p><strong>Genus:</strong> {{ plant_info.genus }}</p>
+            {% else %}
+                <p>No additional information available.</p>
+            {% endif %}
+
+            {% if plant.wiki_link %}
+                <p><a href="{{ plant.wiki_link }}" target="_blank">Wikipedia Link</a></p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

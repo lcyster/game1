@@ -42,26 +42,34 @@ def add_plant():
         new_plant = Plant(name=name, wiki_link=wiki_link, photo_filename=photo_filename)
         db.session.add(new_plant)
         db.session.commit()
-        return redirect(url_for('index'))
+        return redirect(url_for('plant_overview', plant_id=new_plant.id))
         
     return render_template('add_plant.html')
 
+@app.route('/plant/<int:plant_id>')
+def plant_overview(plant_id):
+    plant = Plant.query.get_or_404(plant_id)
+    trefle_data = get_plant_info(plant.name)
+    return render_template('plant_overview.html', plant=plant, trefle_data=trefle_data)
+
 TREFLE_API_KEY = os.environ.get('TREFLE_API_KEY')
 
-@app.route('/api/plant-info/<plant_name>')
-def plant_info(plant_name):
+def get_plant_info(plant_name):
     if not TREFLE_API_KEY:
-        return jsonify({"error": "Trefle API key not configured."}), 500
+        return {"error": "Trefle API key not configured."}
 
     url = f"https://trefle.io/api/v1/plants/search?token={TREFLE_API_KEY}&q={plant_name}"
     
     try:
         response = requests.get(url)
         response.raise_for_status()  # Raise an exception for bad status codes
-        data = response.json()
-        return jsonify(data)
+        return response.json()
     except requests.exceptions.RequestException as e:
-        return jsonify({"error": str(e)}), 500
+        return {"error": str(e)}
+
+@app.route('/api/plant-info/<plant_name>')
+def plant_info(plant_name):
+    return jsonify(get_plant_info(plant_name))
 
 # A command to initialize the database
 @app.cli.command("init-db")
