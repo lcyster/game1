@@ -92,6 +92,7 @@ celerybeat.pid
 .sage.trac
 
 # Environments
+.direnv/
 .env
 .venv
 env/
@@ -100,4 +101,3 @@ ENV/
 env.bak/
 venv.bak/
 .flaskenv
-

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import json
 import sys
 
@@ -31,7 +33,7 @@ def analyze_har(har_file_path):
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
-        print("Usage: python har_analyzer.py <path_to_har_file>")
+        print("Usage: har_analyzer.py <path_to_har_file>")
         sys.exit(1)
 
     analyze_har(sys.argv[1])
