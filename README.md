@@ -29,8 +29,14 @@ Nix flakes and direnv are supported. With direnv enabled, `scripts/` is added to
 Without direnv, install dependencies and run scripts from the project root:
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt -r requirements-dev.txt
 scripts/g-dev start
+```
+
+## Checks
+
+```bash
+pyright
 ```
 
 ## Local Data

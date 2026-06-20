@@ -2,13 +2,13 @@
 
 import argparse
 import json
+from pathlib import Path
+from typing import Any, cast
 
 
-def analyze_har(har_file_path):
-    """Analyzes a HAR file and prints a summary of the slowest requests."""
+def analyze_har(har_file_path: str) -> None:
     try:
-        with open(har_file_path, 'r', encoding='utf-8') as f:
-            har_data = json.load(f)
+        har_data = cast(dict[str, Any], json.loads(Path(har_file_path).read_text(encoding='utf-8')))
     except FileNotFoundError:
         print(f"Error: File not found at {har_file_path}")
         return
@@ -16,24 +16,45 @@ def analyze_har(har_file_path):
         print(f"Error: Could not decode JSON from {har_file_path}")
         return
 
-    entries = har_data['log']['entries']
+    log_data = har_data.get('log')
+    if not isinstance(log_data, dict):
+        print(f"Error: HAR file missing log data at {har_file_path}")
+        return
 
-    sorted_entries = sorted(entries, key=lambda x: x['time'], reverse=True)
+    entries = log_data.get('entries')
+    if not isinstance(entries, list):
+        print(f"Error: HAR file missing request entries at {har_file_path}")
+        return
+
+    valid_entries = [entry for entry in entries if isinstance(entry, dict)]
+    sorted_entries = sorted(valid_entries, key=get_entry_time, reverse=True)
 
     print("Slowest requests:")
     for entry in sorted_entries[:10]:
-        url = entry['request']['url']
-        time = entry['time']
-        timings = entry['timings']
-        print(f"\nURL: {url}")
-        print(f"  Total time: {time:.2f} ms")
-        print(f"  Timings: ")
-        for k, v in timings.items():
-            if v != -1:
-                print(f"    {k}: {v:.2f} ms")
+        request_data = entry.get('request')
+        timings = entry.get('timings')
+        if not isinstance(request_data, dict) or not isinstance(timings, dict):
+            continue
+
+        request_url = request_data.get('url')
+        total_time = entry.get('time')
+        if not isinstance(request_url, str) or not isinstance(total_time, int | float):
+            continue
+
+        print(f"\nURL: {request_url}")
+        print(f"  Total time: {total_time:.2f} ms")
+        print("  Timings: ")
+        for timing_name, timing_value in timings.items():
+            if isinstance(timing_value, int | float) and timing_value != -1:
+                print(f"    {timing_name}: {timing_value:.2f} ms")
 
 
-def main():
+def get_entry_time(entry: dict[Any, Any]) -> float:
+    entry_time = entry.get('time')
+    return float(entry_time) if isinstance(entry_time, int | float) else 0.0
+
+
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Analyze a HAR file and print the slowest requests."
     )

@@ -1,0 +1,19 @@
+{
+  "include": ["app", "scripts"],
+  "exclude": [
+    ".direnv",
+    ".git",
+    ".venv",
+    "env",
+    "venv",
+    "instance",
+    "__pycache__"
+  ],
+  "typeCheckingMode": "strict",
+  "pythonVersion": "3.14",
+  "useLibraryCodeForTypes": false,
+  "reportMissingTypeStubs": false,
+  "reportUnknownMemberType": false,
+  "reportUnknownVariableType": false,
+  "reportUnknownArgumentType": false
+}

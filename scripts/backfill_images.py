@@ -3,15 +3,16 @@
 import argparse
 import os
 import sys
+from io import BytesIO
 from pathlib import Path
+from typing import Any, cast
 
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 
-def backfill_images():
-    """Downloads, compresses, and saves images for existing plants."""
+def backfill_images() -> None:
     import requests
     from PIL import Image
     from app.main import app, db, Plant, get_plant_info, get_wiki_data
@@ -23,9 +24,12 @@ def backfill_images():
             if not plant.photo_filename or not os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], plant.photo_filename)):
                 print(f"Processing {plant.name}...")
                 trefle_data = get_plant_info(plant.name)
-                image_url = None
-                if trefle_data and trefle_data.get('data') and trefle_data['data'].get('image_url'):
-                    image_url = trefle_data['data']['image_url']
+                image_url: str | None = None
+                trefle_species_data = trefle_data.get('data')
+                if isinstance(trefle_species_data, dict):
+                    trefle_image_url = cast(dict[str, Any], trefle_species_data).get('image_url')
+                    if isinstance(trefle_image_url, str):
+                        image_url = trefle_image_url
                 else:
                     wiki_data = get_wiki_data(plant.name)
                     if wiki_data['image']:
@@ -40,23 +44,23 @@ def backfill_images():
                         safe_filename = secure_filename(plant.name) + ".jpg"
                         image_path = os.path.join(app.config['UPLOAD_FOLDER'], 'images', safe_filename)
 
-                        with Image.open(response.raw) as img:
-                            img.thumbnail((300, 300))
-                            img.save(image_path, 'JPEG', quality=85)
+                        with Image.open(BytesIO(response.content)) as image:
+                            image.thumbnail((300, 300))
+                            image.save(image_path, 'JPEG', quality=85)
                         
                         plant.photo_filename = os.path.join('images', safe_filename)
                         print(f"  Image saved to {image_path}")
 
-                    except requests.exceptions.RequestException as e:
-                        print(f"  Error downloading image: {e}")
-                    except IOError as e:
-                        print(f"  Error processing image: {e}")
+                    except requests.exceptions.RequestException as exception:
+                        print(f"  Error downloading image: {exception}")
+                    except OSError as exception:
+                        print(f"  Error processing image: {exception}")
         
         db.session.commit()
         print("Finished backfilling images.")
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Download, resize, and cache missing images for existing plants."
     )

@@ -17,12 +17,14 @@
         const performSearch = () => {
             const plantName = searchInput.value;
             if (plantName) {
-                fetch(`/api/plant-info/${plantName}`)
+                fetch(`/api/plant-info/${encodeURIComponent(plantName)}`)
                     .then(response => response.json())
                     .then(data => {
                         const resultsDiv = document.getElementById('search-results');
                         resultsDiv.innerHTML = '';
-                        if (data.data && data.data.length > 0) {
+                        if (data.error) {
+                            resultsDiv.innerHTML = `<p>${data.error}</p>`;
+                        } else if (data.data && data.data.length > 0) {
                             data.data.forEach(plant => {
                                 const plantDiv = document.createElement('div');
                                 plantDiv.innerHTML = `

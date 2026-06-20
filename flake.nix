@@ -32,7 +32,7 @@
         in
         {
           default = pkgs.mkShell {
-            packages = [ pythonEnv ];
+            packages = [ pythonEnv pkgs.pyright ];
 
             shellHook = ''
               export FLASK_APP=app.main
