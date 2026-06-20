@@ -1,0 +1,287 @@
+#!/usr/bin/env python3
+
+import argparse
+import json
+import os
+import signal
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+INSTANCE_DIR = ROOT / "instance"
+LOG_DIR = INSTANCE_DIR / "logs"
+RUN_DIR = INSTANCE_DIR / "run"
+STATE_FILE = RUN_DIR / "g-dev.json"
+
+SERVERS = {
+    "web": {
+        "init": [sys.executable, "-m", "flask", "--app", "app.main", "init-db"],
+        "start": [
+            sys.executable,
+            "-m",
+            "flask",
+            "--app",
+            "app.main",
+            "run",
+            "--debug",
+            "--no-reload",
+            "--host",
+            "0.0.0.0",
+        ],
+        "log": LOG_DIR / "web.log",
+        "url": "http://127.0.0.1:5000",
+    }
+}
+
+
+def ensure_dirs():
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    RUN_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def load_state():
+    if not STATE_FILE.exists():
+        return {}
+    try:
+        return json.loads(STATE_FILE.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return {}
+
+
+def save_state(state):
+    ensure_dirs()
+    STATE_FILE.write_text(json.dumps(state, indent=2, sort_keys=True), encoding="utf-8")
+
+
+def remove_service_state(name):
+    state = load_state()
+    if name in state:
+        del state[name]
+        save_state(state)
+
+
+def pid_exists(pid):
+    if pid <= 0:
+        return False
+
+    if os.name == "nt":
+        result = subprocess.run(
+            ["tasklist", "/FI", f"PID eq {pid}", "/FO", "CSV", "/NH"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        return str(pid) in result.stdout
+
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def creation_options():
+    if os.name == "nt":
+        return {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
+    return {"start_new_session": True}
+
+
+def run_init(name, config):
+    ensure_dirs()
+    print(f"Initializing {name}...", flush=True)
+    result = subprocess.run(config["init"], cwd=ROOT, check=False)
+    if result.returncode != 0:
+        raise SystemExit(f"Initialization failed for {name} with exit code {result.returncode}.")
+
+
+def start_server(name, config):
+    ensure_dirs()
+    state = load_state()
+    current = state.get(name, {})
+    pid = int(current.get("pid", 0) or 0)
+
+    if pid_exists(pid):
+        print(f"{name} is already running with PID {pid}.")
+        return
+
+    run_init(name, config)
+
+    log_path = config["log"]
+    log_file = log_path.open("ab", buffering=0)
+    log_file.write(f"\n--- g-dev start {time.strftime('%Y-%m-%d %H:%M:%S')} ---\n".encode("utf-8"))
+
+    process = subprocess.Popen(
+        config["start"],
+        cwd=ROOT,
+        stdout=log_file,
+        stderr=subprocess.STDOUT,
+        stdin=subprocess.DEVNULL,
+        close_fds=os.name != "nt",
+        **creation_options(),
+    )
+    log_file.close()
+
+    state[name] = {
+        "pid": process.pid,
+        "command": config["start"],
+        "log": str(log_path.relative_to(ROOT)),
+        "started_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+    }
+    save_state(state)
+    print(f"Started {name} with PID {process.pid}.")
+    if config.get("url"):
+        print(f"{name} URL: {config['url']}")
+    print(f"Logs: {log_path.relative_to(ROOT)}")
+
+
+def stop_process_tree(pid):
+    if os.name == "nt":
+        return subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], check=False).returncode == 0
+
+    try:
+        os.killpg(pid, signal.SIGTERM)
+    except ProcessLookupError:
+        return True
+
+    deadline = time.time() + 5
+    while time.time() < deadline:
+        if not pid_exists(pid):
+            return True
+        time.sleep(0.2)
+
+    try:
+        os.killpg(pid, signal.SIGKILL)
+    except ProcessLookupError:
+        return True
+    return True
+
+
+def stop_server(name):
+    state = load_state()
+    current = state.get(name, {})
+    pid = int(current.get("pid", 0) or 0)
+
+    if not pid_exists(pid):
+        print(f"{name} is not running.")
+        remove_service_state(name)
+        return
+
+    if stop_process_tree(pid):
+        print(f"Stopped {name} with PID {pid}.")
+        remove_service_state(name)
+    else:
+        raise SystemExit(f"Failed to stop {name} with PID {pid}.")
+
+
+def read_last_lines(path, line_count):
+    if line_count <= 0 or not path.exists():
+        return []
+    with path.open("rb") as file:
+        file.seek(0, os.SEEK_END)
+        position = file.tell()
+        buffer = bytearray()
+        lines_seen = 0
+
+        while position > 0 and lines_seen <= line_count:
+            read_size = min(4096, position)
+            position -= read_size
+            file.seek(position)
+            chunk = file.read(read_size)
+            buffer[:0] = chunk
+            lines_seen += chunk.count(b"\n")
+
+    return buffer.decode("utf-8", errors="replace").splitlines()[-line_count:]
+
+
+def tail_file(path, line_count, follow):
+    if not path.exists():
+        print(f"No log file yet: {path.relative_to(ROOT)}")
+        return
+
+    for line in read_last_lines(path, line_count):
+        print(line)
+
+    if not follow:
+        return
+
+    with path.open("r", encoding="utf-8", errors="replace") as file:
+        file.seek(0, os.SEEK_END)
+        try:
+            while True:
+                line = file.readline()
+                if line:
+                    print(line, end="")
+                else:
+                    time.sleep(0.5)
+        except KeyboardInterrupt:
+            print()
+
+
+def start_command(_args):
+    for name, config in SERVERS.items():
+        start_server(name, config)
+
+
+def stop_command(_args):
+    for name in SERVERS:
+        stop_server(name)
+
+
+def logs_command(args):
+    for index, (name, config) in enumerate(SERVERS.items()):
+        if len(SERVERS) > 1:
+            if index:
+                print()
+            print(f"==> {name} <==")
+        tail_file(config["log"], args.lines, args.follow)
+
+
+def status_command(_args):
+    state = load_state()
+    for name, config in SERVERS.items():
+        pid = int(state.get(name, {}).get("pid", 0) or 0)
+        if pid_exists(pid):
+            url = f", url {config['url']}" if config.get("url") else ""
+            print(f"{name}: running, PID {pid}, log {config['log'].relative_to(ROOT)}{url}")
+        else:
+            print(f"{name}: stopped")
+
+
+def build_parser():
+    parser = argparse.ArgumentParser(
+        prog="g-dev",
+        description="Manage game1 development server processes.",
+    )
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    start = subparsers.add_parser("start", help="initialize if needed and start server(s) in the background")
+    start.set_defaults(func=start_command)
+
+    stop = subparsers.add_parser("stop", help="stop background server(s)")
+    stop.set_defaults(func=stop_command)
+
+    logs = subparsers.add_parser("logs", help="tail server log output")
+    logs.add_argument("-n", "--lines", type=int, default=80, help="number of previous lines to show (default: 80)")
+    logs.add_argument("-f", "--follow", action="store_true", default=True, help="keep following logs (default)")
+    logs.add_argument("--no-follow", action="store_false", dest="follow", help="print recent logs and exit")
+    logs.set_defaults(func=logs_command)
+
+    status = subparsers.add_parser("status", help="show server status")
+    status.set_defaults(func=status_command)
+
+    return parser
+
+
+def main(argv=None):
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    args.func(args)
+
+
+if __name__ == "__main__":
+    main()
