@@ -3,6 +3,7 @@
 import argparse
 import os
 import sys
+import time
 from io import BytesIO
 from pathlib import Path
 from typing import Any, cast
@@ -21,8 +22,14 @@ def backfill_images() -> None:
     with app.app_context():
         plants = Plant.query.all()
         for plant in plants:
+            if plant.photo_filename and '\\' in plant.photo_filename:
+                print(f"Fixing path for {plant.name}...")
+                plant.photo_filename = plant.photo_filename.replace('\\', '/')
+                db.session.add(plant)
+
             if not plant.photo_filename or not os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], plant.photo_filename)):
                 print(f"Processing {plant.name}...")
+                time.sleep(1)
                 trefle_data = get_plant_info(plant.name)
                 image_url: str | None = None
                 trefle_species_data = trefle_data.get('data')
@@ -44,11 +51,14 @@ def backfill_images() -> None:
                         safe_filename = secure_filename(plant.name) + ".jpg"
                         image_path = os.path.join(app.config['UPLOAD_FOLDER'], 'images', safe_filename)
 
+                        os.makedirs(os.path.dirname(image_path), exist_ok=True)
+
                         with Image.open(BytesIO(response.content)) as image:
                             image.thumbnail((300, 300))
                             image.save(image_path, 'JPEG', quality=85)
                         
-                        plant.photo_filename = os.path.join('images', safe_filename)
+                        plant.photo_filename = (Path('images') / safe_filename).as_posix()
+                        plant.image_source_url = image_url
                         print(f"  Image saved to {image_path}")
 
                     except requests.exceptions.RequestException as exception:

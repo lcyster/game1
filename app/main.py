@@ -1,4 +1,6 @@
 import os
+import re
+import time
 from io import BytesIO
 from pathlib import Path
 from typing import Any, TypedDict, cast
@@ -8,7 +10,7 @@ import wikipedia
 from PIL import Image
 from flask import Flask, Response, jsonify, render_template, request, url_for
 from flask_sqlalchemy import SQLAlchemy
-from werkzeug.utils import secure_filename
+from flask_migrate import Migrate
 
 
 JsonObject = dict[str, Any]
@@ -92,16 +94,61 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = os.path.join(app.config.root_path, 'static', 'uploads')
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 class Plant(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     photo_filename = db.Column(db.String(100))
     wiki_link = db.Column(db.String(200))
+    image_source_url = db.Column(db.String(200))
+    scientific_name = db.Column(db.String(100))
+
+
+def get_static_directory() -> Path:
+    if app.static_folder:
+        return Path(app.static_folder)
+    return Path(app.root_path) / 'static'
+
+
+def normalize_photo_filename(photo_filename: str | None) -> str | None:
+    if not photo_filename:
+        return None
+
+    normalized_filename = photo_filename.replace('\\', '/').lstrip('/')
+    if normalized_filename.startswith('http://') or normalized_filename.startswith('https://'):
+        return None
+
+    if (get_static_directory() / normalized_filename).exists():
+        return normalized_filename
+
+    if not normalized_filename.startswith('uploads/'):
+        upload_relative_filename = (Path('uploads') / normalized_filename).as_posix()
+        if (get_static_directory() / upload_relative_filename).exists() or normalized_filename.startswith('images/'):
+            return upload_relative_filename
+
+    return normalized_filename
+
+
+def photo_file_exists(photo_filename: str | None) -> bool:
+    normalized_filename = normalize_photo_filename(photo_filename)
+    if not normalized_filename:
+        return False
+    return (get_static_directory() / normalized_filename).exists()
 
 @app.route('/')
 def index() -> str:
     plants = Plant.query.all()
+    has_normalized_photo_filename = False
+    for plant in plants:
+        normalized_photo_filename = normalize_photo_filename(plant.photo_filename)
+        if normalized_photo_filename != plant.photo_filename:
+            plant.photo_filename = normalized_photo_filename
+            has_normalized_photo_filename = True
+
+    if has_normalized_photo_filename:
+        db.session.commit()
+
     return render_template('index.html', plants=plants)
 
 @app.route('/add')
@@ -125,13 +172,20 @@ def add_plant_from_trefle() -> Response:
     image_url = get_trefle_image_url(trefle_data)
     wiki_name = scientific_name or name
 
-    if image_url:
-        photo_filename = cache_plant_image(image_url, wiki_name)
-    else:
+    if not image_url:
         wiki_data = get_wiki_data(wiki_name)
-        photo_filename = cache_plant_image(wiki_data['image'], wiki_name) if wiki_data['image'] else None
+        image_url = wiki_data['image']
 
-    new_plant = cast(Any, Plant)(name=name, photo_filename=photo_filename, wiki_link=f"https://en.wikipedia.org/wiki/{wiki_name.replace(' ', '_')}")
+    name_for_image = scientific_name or wiki_name
+    photo_filename = cache_plant_image(image_url, name_for_image) if image_url else None
+
+    new_plant = cast(Any, Plant)(
+        name=name,
+        scientific_name=scientific_name,
+        photo_filename=photo_filename,
+        wiki_link=f"https://en.wikipedia.org/wiki/{wiki_name.replace(' ', '_')}",
+        image_source_url=image_url,
+    )
     db.session.add(new_plant)
     db.session.commit()
 
@@ -143,8 +197,43 @@ def plant_overview(plant_id: int) -> str:
     trefle_data = get_plant_info(plant.name)
     wiki_data = get_wiki_data(plant.name)
     wiki_summary = wiki_data['summary']
+    has_plant_changes = False
+
+    normalized_photo_filename = normalize_photo_filename(plant.photo_filename)
+    if normalized_photo_filename != plant.photo_filename:
+        plant.photo_filename = normalized_photo_filename
+        has_plant_changes = True
+
+    if not plant.photo_filename or not photo_file_exists(plant.photo_filename):
+        image_url = plant.image_source_url or get_trefle_image_url(trefle_data)
+        if not image_url:
+            image_url = wiki_data['image']
+
+        if image_url:
+            scientific_name = plant.scientific_name
+            if not scientific_name:
+                species_data = trefle_data.get('data')
+                if isinstance(species_data, dict):
+                    species_scientific_name = species_data.get('scientific_name')
+                    if isinstance(species_scientific_name, str):
+                        scientific_name = species_scientific_name
+
+            name_to_use = scientific_name if scientific_name else plant.name
+
+            photo_filename = cache_plant_image(image_url, name_to_use)
+            if photo_filename:
+                plant.photo_filename = photo_filename
+                plant.image_source_url = image_url
+                if not plant.scientific_name and scientific_name:
+                    plant.scientific_name = scientific_name
+                has_plant_changes = True
+
+    if has_plant_changes:
+        db.session.commit()
 
     return render_template('plant_overview.html', plant=plant, trefle_data=trefle_data, wiki_summary=wiki_summary)
+
+
 
 def get_wiki_data(plant_name: str) -> WikiData:
     cache_key = f"wiki_{plant_name}"
@@ -232,20 +321,31 @@ def get_trefle_image_url(trefle_data: JsonObject) -> str | None:
     return image_url if isinstance(image_url, str) else None
 
 
-def cache_plant_image(image_url: str, plant_name: str) -> str | None:
+def clean_scientific_name(name: str) -> str:
+    cleaned_name = re.sub(r'[^a-zA-Z0-9_]+', '_', name).strip('_')
+    return cleaned_name or 'plant'
+
+def cache_plant_image(image_url: str, scientific_name: str) -> str | None:
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
         response = requests.get(image_url, stream=True, headers=headers)
         response.raise_for_status()
 
-        safe_filename = secure_filename(plant_name) + ".jpg"
-        image_path = os.path.join(app.config['UPLOAD_FOLDER'], 'images', safe_filename)
-
         with Image.open(BytesIO(response.content)) as image:
             image.thumbnail((300, 300))
+
+            timestamp = int(time.time())
+            dimensions = f"{image.width}x{image.height}"
+            cleaned_name = clean_scientific_name(scientific_name)
+
+            safe_filename = f"{cleaned_name}_{dimensions}_{timestamp}.jpg"
+            upload_directory = Path(app.config['UPLOAD_FOLDER']) / 'images'
+            image_path = upload_directory / safe_filename
+
+            upload_directory.mkdir(parents=True, exist_ok=True)
             image.save(image_path, 'JPEG', quality=85)
 
-        return os.path.join('images', safe_filename)
+        return (Path('uploads') / 'images' / safe_filename).as_posix()
     except requests.exceptions.RequestException as exception:
         print(f"Error downloading image: {exception}")
     except OSError as exception:
@@ -256,6 +356,18 @@ def cache_plant_image(image_url: str, plant_name: str) -> str | None:
 @app.route('/api/plant-info/<plant_name>')
 def plant_info(plant_name: str) -> Response:
     return jsonify(search_plants(plant_name))
+
+@app.route('/debug/plant/<int:plant_id>')
+def debug_plant(plant_id: int) -> Response:
+    plant = Plant.query.get_or_404(plant_id)
+    return jsonify({
+        'id': plant.id,
+        'name': plant.name,
+        'photo_filename': plant.photo_filename,
+        'wiki_link': plant.wiki_link,
+        'image_source_url': plant.image_source_url,
+        'scientific_name': plant.scientific_name,
+    })
 
 @app.cli.command("init-db")
 def init_db_command() -> None:

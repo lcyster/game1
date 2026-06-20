@@ -20,4 +20,14 @@ Before reporting back to the user, ensure you have thoroughly investigated the i
 - Use type annotations for project code.
 - Keep `pyright` passing.
 - Treat ORM and framework APIs as typed boundaries. Do not refactor SQLAlchemy models only to satisfy the type checker.
-- Use narrow annotations, casts, or `Any` at framework boundaries when strict typing would otherwise require framework-specific rewrites.
+- Use narrow annotations, casts, or `Any` at framework boundaries when strict typing would otherwise require ## Server Management
+
+- To start the server, use the command `g-dev start`. This command starts the server in the background and returns immediately. Do not wait for it to finish.
+- To stop the server, use the command `g-dev stop`.
+- To check the status of the server, use the command `g-dev status`.
+- To see the server logs, use the command `g-dev logs`.
+
+## Workflow
+
+- After making a code change, immediately restart the server using `g-dev stop` and then `g-dev start`.
+- Once the server is started, notify the user that it is ready for testing.

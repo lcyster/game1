@@ -38,6 +38,9 @@
             {% if plant.wiki_link %}
                 <p><a href="{{ plant.wiki_link }}" target="_blank">Wikipedia Link</a></p>
             {% endif %}
+            {% if plant.image_source_url %}
+                <p><a href="{{ plant.image_source_url }}" target="_blank">Image Source</a></p>
+            {% endif %}
         </div>
     </div>
 {% endblock %}
