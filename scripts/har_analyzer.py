@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
+import argparse
 import json
-import sys
+
 
 def analyze_har(har_file_path):
     """Analyzes a HAR file and prints a summary of the slowest requests."""
@@ -31,9 +32,16 @@ def analyze_har(har_file_path):
             if v != -1:
                 print(f"    {k}: {v:.2f} ms")
 
-if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        print("Usage: har_analyzer.py <path_to_har_file>")
-        sys.exit(1)
 
-    analyze_har(sys.argv[1])
+def main():
+    parser = argparse.ArgumentParser(
+        description="Analyze a HAR file and print the slowest requests."
+    )
+    parser.add_argument("har_file", help="path to the HAR file to analyze")
+    args = parser.parse_args()
+
+    analyze_har(args.har_file)
+
+
+if __name__ == '__main__':
+    main()

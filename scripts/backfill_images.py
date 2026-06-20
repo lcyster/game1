@@ -1,13 +1,22 @@
 #!/usr/bin/env python3
 
+import argparse
 import os
-import requests
-from PIL import Image
-from app.main import app, db, Plant, get_plant_info, get_wiki_data
-from werkzeug.utils import secure_filename
+import sys
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
 
 def backfill_images():
     """Downloads, compresses, and saves images for existing plants."""
+    import requests
+    from PIL import Image
+    from app.main import app, db, Plant, get_plant_info, get_wiki_data
+    from werkzeug.utils import secure_filename
+
     with app.app_context():
         plants = Plant.query.all()
         for plant in plants:
@@ -46,5 +55,14 @@ def backfill_images():
         db.session.commit()
         print("Finished backfilling images.")
 
-if __name__ == '__main__':
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Download, resize, and cache missing images for existing plants."
+    )
+    parser.parse_args()
     backfill_images()
+
+
+if __name__ == '__main__':
+    main()

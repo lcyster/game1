@@ -47,11 +47,8 @@ instance/run/g-dev.json
 
 Optional secrets can be stored in `.env` or `~/.env.game1`.
 
-`TREFLE_API_KEY` enables plant data lookups from Trefle.
-
-## Other Scripts
+`TREFLE_API_KEY` enables plant data lookups from [Trefle](https://trefle.io/):
 
 ```bash
-backfill_images.py
-har_analyzer.py <path_to_har_file>
+export TREFLE_API_KEY=your_trefle_api_key_here
 ```
