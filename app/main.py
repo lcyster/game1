@@ -12,7 +12,7 @@ import wikipedia
 from PIL import Image
 from flask import Flask, Response, jsonify, render_template, request, url_for
 from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
+from flask_migrate import Migrate, upgrade
 from sqlalchemy import text
 
 
@@ -136,6 +136,9 @@ app.config['UPLOAD_FOLDER'] = os.path.join(app.config.root_path, 'static', 'uplo
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+
+with app.app_context():
+    upgrade()
 
 STARTUP_COMMITISH, STARTUP_DIRTY = get_git_info()
 
