@@ -7,6 +7,7 @@ import signal
 import subprocess
 import sys
 import time
+import urllib.request
 from pathlib import Path
 from typing import Any, TypedDict
 
@@ -16,6 +17,52 @@ INSTANCE_DIRECTORY = ROOT / "instance"
 LOG_DIRECTORY = INSTANCE_DIRECTORY / "logs"
 RUN_DIRECTORY = INSTANCE_DIRECTORY / "run"
 STATE_FILE = RUN_DIRECTORY / "g-dev.json"
+
+
+def get_git_info() -> tuple[str, bool | None]:
+    commitish = os.environ.get('GIT_COMMITISH')
+    dirty_value = os.environ.get('GIT_DIRTY')
+
+    if commitish and dirty_value is not None:
+        dirty = dirty_value.lower() in ('true', '1', 'yes')
+        return commitish, dirty
+
+    try:
+        result = subprocess.run(
+            ['git', 'rev-parse', '--short', 'HEAD'],
+            capture_output=True,
+            text=True,
+            check=False,
+            cwd=ROOT,
+        )
+        git_commitish = result.stdout.strip() if result.returncode == 0 else 'unknown'
+    except FileNotFoundError:
+        git_commitish = 'unknown'
+
+    if dirty_value is not None:
+        dirty = dirty_value.lower() in ('true', '1', 'yes')
+    else:
+        try:
+            status_result = subprocess.run(
+                ['git', 'status', '--porcelain'],
+                capture_output=True,
+                text=True,
+                check=False,
+                cwd=ROOT,
+            )
+            dirty = bool(status_result.stdout.strip()) if status_result.returncode == 0 else None
+        except FileNotFoundError:
+            dirty = None
+
+    return commitish or git_commitish, dirty
+
+
+def get_server_health(url: str) -> dict[str, Any] | None:
+    try:
+        response = urllib.request.urlopen(f'{url}/health', timeout=2)
+        return json.loads(response.read())
+    except Exception:
+        return None
 
 
 class ServerConfiguration(TypedDict):
@@ -273,10 +320,17 @@ def status_command(arguments: argparse.Namespace) -> None:
     for name, configuration in SERVER_CONFIGURATIONS.items():
         process_id = int(state.get(name, {}).get("pid", 0) or 0)
         if process_exists(process_id):
-            service_url = f", url {configuration['url']}" if configuration.get("url") else ""
-            print(f"{name}: running, PID {process_id}, log {configuration['log'].relative_to(ROOT)}{service_url}")
+            service_url = configuration.get("url", "")
+            health = get_server_health(service_url) if service_url else None
+            commitish = health.get('commitish', 'unknown') if health else 'unknown'
+            dirty = health.get('dirty')
+            dirty_label = 'dirty' if dirty else 'clean' if dirty is not None else 'unknown'
+            print(f"{name}: running, PID {process_id}, log {configuration['log'].relative_to(ROOT)}, url {service_url}, commit {commitish}, {dirty_label}")
         else:
             print(f"{name}: stopped")
+    commitish, dirty = get_git_info()
+    dirty_label = 'dirty' if dirty else 'clean' if dirty is not None else 'unknown'
+    print(f"git: commit {commitish}, {dirty_label}")
 
 
 def build_parser() -> argparse.ArgumentParser:

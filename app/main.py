@@ -1,5 +1,7 @@
 import os
 import re
+import subprocess
+import sys
 import time
 from io import BytesIO
 from pathlib import Path
@@ -11,6 +13,7 @@ from PIL import Image
 from flask import Flask, Response, jsonify, render_template, request, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from sqlalchemy import text
 
 
 JsonObject = dict[str, Any]
@@ -82,6 +85,44 @@ def unquote_environment_value(environment_value: str) -> str:
     return environment_value
 
 
+def get_git_info() -> tuple[str, bool | None]:
+    commitish = os.environ.get('GIT_COMMITISH')
+    dirty_value = os.environ.get('GIT_DIRTY')
+
+    if commitish and dirty_value is not None:
+        dirty = dirty_value.lower() in ('true', '1', 'yes')
+        return commitish, dirty
+
+    try:
+        result = subprocess.run(
+            ['git', 'rev-parse', '--short', 'HEAD'],
+            capture_output=True,
+            text=True,
+            check=False,
+            cwd=ROOT_DIRECTORY,
+        )
+        git_commitish = result.stdout.strip() if result.returncode == 0 else 'unknown'
+    except FileNotFoundError:
+        git_commitish = 'unknown'
+
+    if dirty_value is not None:
+        dirty = dirty_value.lower() in ('true', '1', 'yes')
+    else:
+        try:
+            status_result = subprocess.run(
+                ['git', 'status', '--porcelain'],
+                capture_output=True,
+                text=True,
+                check=False,
+                cwd=ROOT_DIRECTORY,
+            )
+            dirty = bool(status_result.stdout.strip()) if status_result.returncode == 0 else None
+        except FileNotFoundError:
+            dirty = None
+
+    return commitish or git_commitish, dirty
+
+
 load_environment_files()
 
 app = Flask(__name__)
@@ -95,6 +136,11 @@ app.config['UPLOAD_FOLDER'] = os.path.join(app.config.root_path, 'static', 'uplo
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+
+STARTUP_COMMITISH, STARTUP_DIRTY = get_git_info()
+
+RELOAD_MODE = 'disabled' if ('--no-reload' in sys.argv or not app.debug) else 'enabled'
+
 
 class Plant(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -368,6 +414,23 @@ def debug_plant(plant_id: int) -> Response:
         'image_source_url': plant.image_source_url,
         'scientific_name': plant.scientific_name,
     })
+
+@app.route('/health')
+def health() -> tuple[Response, int]:
+    try:
+        db.session.execute(text('SELECT 1'))
+        status = 'ok'
+        status_code = 200
+    except Exception:
+        status = 'error'
+        status_code = 503
+
+    return jsonify({
+        'status': status,
+        'commitish': STARTUP_COMMITISH,
+        'dirty': STARTUP_DIRTY,
+        'reload': RELOAD_MODE,
+    }), status_code
 
 @app.cli.command("init-db")
 def init_db_command() -> None:
