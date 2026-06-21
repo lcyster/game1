@@ -5,17 +5,13 @@
     <div class="plant-grid">
         {% for plant in plants %}
             <div class="plant-item">
-                <a href="{{ url_for('plant_overview', plant_id=plant.id) }}">
+                <a href="{{ url_for('pages.plant_overview', plant_id=plant.id) }}">
                     <h2>{{ plant.name }}</h2>
-                    {% if plant.photo_filename %}
-                        <img src="{{ url_for('static', filename=plant.photo_filename) }}" alt="{{ plant.name }}" width="200">
-                    {% else %}
-                        <img src="https://via.placeholder.com/200x200.png?text=No+Image" alt="No Image Available">
-                    {% endif %}
+                    <img src="{{ plant.get_image_url(200) }}" alt="{{ plant.name }}" width="200">
                 </a>
             </div>
         {% else %}
-            <p>You haven't added any plants yet. <a href="{{ url_for('add_plant') }}">Add one now!</a></p>
+            <p>You haven't added any plants yet. <a href="{{ url_for('pages.add_plant') }}">Add one now!</a></p>
         {% endfor %}
     </div>
 {% endblock %}

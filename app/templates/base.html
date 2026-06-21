@@ -8,8 +8,8 @@
 </head>
 <body>
     <nav>
-        <a href="{{ url_for('index') }}">My Plants</a>
-        <a href="{{ url_for('add_plant') }}">Add a Plant</a>
+        <a href="{{ url_for('pages.index') }}">My Plants</a>
+        <a href="{{ url_for('pages.add_plant') }}">Add a Plant</a>
     </nav>
     <hr>
     {% block content %}{% endblock %}

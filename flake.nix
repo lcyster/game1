@@ -36,7 +36,7 @@
             packages = [ pythonEnv pkgs.pyright ];
 
             shellHook = ''
-              export FLASK_APP=app.main
+              export FLASK_APP=app
               export PATH="$PWD/scripts:$PATH"
             '';
           };

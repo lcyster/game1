@@ -81,13 +81,13 @@ class ServiceState(TypedDict):
 
 SERVER_CONFIGURATIONS: dict[str, ServerConfiguration] = {
     "web": {
-        "init": [sys.executable, "-m", "flask", "--app", "app.main", "init-db"],
+        "init": [sys.executable, "-m", "flask", "--app", "app", "init-db"],
         "start": [
             sys.executable,
             "-m",
             "flask",
             "--app",
-            "app.main",
+            "app",
             "run",
             "--debug",
             "--no-reload",

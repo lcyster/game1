@@ -5,11 +5,7 @@
 
     <div class="plant-overview">
         <div class="plant-image">
-            {% if plant.photo_filename %}
-                <img src="{{ url_for('static', filename=plant.photo_filename) }}" alt="{{ plant.name }}">
-            {% else %}
-                <img src="https://via.placeholder.com/300x300.png?text=No+Image" alt="No Image Available">
-            {% endif %}
+            <img src="{{ plant.get_image_url() }}" alt="{{ plant.name }}">
         </div>
 
         <div class="plant-details">

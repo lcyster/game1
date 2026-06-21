@@ -1,11 +1,17 @@
-import os
-import requests
-from PIL import Image
-from app.main import app, db, Plant, get_plant_info, get_wiki_data
-from werkzeug.utils import secure_filename
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
 
 def backfill_data():
-    """Fills in the new data fields for existing plants."""
+    from app import create_app
+    from app.models import Plant, db
+    from app.trefle import get_plant_info
+    from app.wikipedia import get_wiki_data
+
+    app = create_app()
     with app.app_context():
         plants = Plant.query.all()
         for plant in plants:
@@ -19,36 +25,15 @@ def backfill_data():
             elif wiki_data['image']:
                 plant.image_source_url = wiki_data['image']
 
-            plant.common_name = trefle_data.get('data', {}).get('common_name')
             plant.scientific_name = trefle_data.get('data', {}).get('scientific_name')
-            plant.family = trefle_data.get('data', {}).get('family', {}).get('name')
-            plant.genus = trefle_data.get('data', {}).get('genus', {}).get('name')
-            plant.native_distribution = ",".join(trefle_data.get('data', {}).get('distribution', {}).get('native', []))
-            plant.wiki_summary = wiki_data['summary']
+            plant.wiki_link = f"https://en.wikipedia.org/wiki/{plant.name.replace(' ', '_')}"
 
-            if plant.image_source_url and (not plant.photo_filename or not os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], plant.photo_filename))):
-                try:
-                    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
-                    response = requests.get(plant.image_source_url, stream=True, headers=headers)
-                    response.raise_for_status()
+            if plant.image_source_url:
+                print(f"  Updated image source URL for {plant.name}")
 
-                    safe_filename = secure_filename(plant.scientific_name or plant.name) + ".jpg"
-                    image_path = os.path.join(app.config['UPLOAD_FOLDER'], 'images', safe_filename)
-
-                    with Image.open(response.raw) as img:
-                        img.thumbnail((300, 300))
-                        img.save(image_path, 'JPEG', quality=85)
-                    
-                    plant.photo_filename = os.path.join('images', safe_filename)
-                    print(f"  Image saved to {image_path}")
-
-                except requests.exceptions.RequestException as e:
-                    print(f"  Error downloading image: {e}")
-                except IOError as e:
-                    print(f"  Error processing image: {e}")
-        
         db.session.commit()
         print("Finished backfilling data.")
+
 
 if __name__ == '__main__':
     backfill_data()
