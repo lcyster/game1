@@ -251,6 +251,13 @@ def stop_command(arguments: argparse.Namespace) -> None:
         stop_server(name)
 
 
+def restart_command(arguments: argparse.Namespace) -> None:
+    del arguments
+    for name, configuration in SERVER_CONFIGURATIONS.items():
+        stop_server(name)
+        start_server(name, configuration)
+
+
 def logs_command(arguments: argparse.Namespace) -> None:
     for index, (name, configuration) in enumerate(SERVER_CONFIGURATIONS.items()):
         if len(SERVER_CONFIGURATIONS) > 1:
@@ -284,6 +291,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     stop = subparsers.add_parser("stop", help="stop background server(s)")
     stop.set_defaults(func=stop_command)
+
+    restart = subparsers.add_parser("restart", help="stop then start server(s)")
+    restart.set_defaults(func=restart_command)
 
     logs = subparsers.add_parser("logs", help="tail server log output")
     logs.add_argument("-n", "--lines", type=int, default=80, help="number of previous lines to show (default: 80)")

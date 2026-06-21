@@ -22,6 +22,7 @@
           python = pkgs.python314;
           pythonEnv = python.withPackages (ps: with ps; [
             flask
+            flask-migrate
             flask-sqlalchemy
             pillow
             python-dotenv
