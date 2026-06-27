@@ -5,7 +5,7 @@
 
     <div class="plant-overview">
         <div class="plant-image">
-            <img src="{{ plant.get_image_url() }}" alt="{{ plant.name }}">
+            <img src="{{ plant.get_image_url() }}" alt="{{ plant.name }}" width="{{ image_width }}" height="{{ image_height }}">
         </div>
 
         <div class="plant-details">
@@ -16,8 +16,8 @@
                 {% set plant_info = trefle_data.data %}
                 <p><strong>Common Name:</strong> {{ plant_info.common_name }}</p>
                 <p><strong>Scientific Name:</strong> {{ plant_info.scientific_name }}</p>
-                <p><strong>Family:</strong> {{ plant_info.family.name }}</p>
-                <p><strong>Genus:</strong> {{ plant_info.genus.name }}</p>
+                <p><strong>Family:</strong> {{ plant_info.family }}</p>
+                <p><strong>Genus:</strong> {{ plant_info.genus }}</p>
 
                 <h3>Distribution</h3>
                 {% if plant_info.distribution.native %}

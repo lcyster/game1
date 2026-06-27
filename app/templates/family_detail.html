@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>{{ family_name }}</h1>
+    <p><a href="{{ url_for('pages.groups') }}">Back to Badges</a></p>
+    <div class="plant-grid">
+        {% for plant in plants %}
+            {% set image_url, image_width, image_height = plant.get_image_info(300) %}
+            <div class="plant-item">
+                <a href="{{ url_for('pages.plant_overview', plant_id=plant.id) }}">
+                    <h2>{{ plant.name }}</h2>
+                    <img src="{{ image_url }}" alt="{{ plant.name }}" width="{{ image_width }}" height="{{ image_height }}">
+                </a>
+            </div>
+        {% else %}
+            <p>No plants in this family yet.</p>
+        {% endfor %}
+    </div>
+{% endblock %}

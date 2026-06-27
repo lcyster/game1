@@ -61,25 +61,37 @@
                 const name = event.target.getAttribute('data-name');
                 const scientificName = event.target.getAttribute('data-scientific-name');
 
-                fetch('/api/add-plant-from-trefle', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ 
-                        name: name,
-                        scientific_name: scientificName
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.url) {
-                        window.location.href = data.url;
+                const addPlant = (lat, lng) => {
+                    const body = { name: name, scientific_name: scientificName };
+                    if (lat !== null && lng !== null) {
+                        body.lat = lat;
+                        body.lng = lng;
                     }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
+                    fetch('/api/add-plant-from-trefle', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            document.getElementById('search-results').innerHTML = `<p>${data.error}</p>`;
+                        } else if (data.url) {
+                            window.location.href = data.url;
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+                };
+
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        pos => addPlant(pos.coords.latitude, pos.coords.longitude),
+                        () => addPlant(null, null),
+                        { timeout: 5000 }
+                    );
+                } else {
+                    addPlant(null, null);
+                }
             }
         });
     </script>

@@ -4,14 +4,28 @@
     <h1>My Found Plants</h1>
     <div class="plant-grid">
         {% for plant in plants %}
+            {% set image_url, image_width, image_height = plant.get_image_info(300) %}
             <div class="plant-item">
                 <a href="{{ url_for('pages.plant_overview', plant_id=plant.id) }}">
                     <h2>{{ plant.name }}</h2>
-                    <img src="{{ plant.get_image_url(200) }}" alt="{{ plant.name }}" width="200">
+                    <img src="{{ image_url }}" alt="{{ plant.name }}" width="{{ image_width }}" height="{{ image_height }}">
                 </a>
             </div>
         {% else %}
             <p>You haven't added any plants yet. <a href="{{ url_for('pages.add_plant') }}">Add one now!</a></p>
         {% endfor %}
     </div>
+
+    <div class="dev-footer">
+        <button id="dev-clear" class="dev-clear-btn">DEV CLEAR</button>
+    </div>
+
+    <script>
+        document.getElementById('dev-clear').addEventListener('click', function() {
+            if (!confirm('Delete ALL plants? This cannot be undone.')) return;
+            fetch('/api/clear-plants', { method: 'POST' })
+                .then(function(r) { return r.json(); })
+                .then(function() { window.location.reload(); });
+        });
+    </script>
 {% endblock %}

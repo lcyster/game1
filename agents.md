@@ -24,7 +24,7 @@ Before reporting back to the user, ensure you have thoroughly investigated the i
 
 - To start the server, use the command `g-dev start`. This command starts the server in the background and returns immediately. Do not wait for it to finish.
 - To stop the server, use the command `g-dev stop`.
-- To restart the server, use the command `g-dev restart`.
+- To restart the server, use the command `g-dev restart`. This runs in the background. Do not use timeouts or wait for output — fire and forget.
 - To check the status of the server, use the command `g-dev status`.
 - To see the server logs, use the command `g-dev logs`.
 
@@ -33,3 +33,4 @@ Before reporting back to the user, ensure you have thoroughly investigated the i
 - After making **any** code change, you **must** immediately restart the server using `g-dev restart`. Do not skip this step.
 - Once the server is restarted, verify it started successfully before reporting to the user.
 - If the server fails to start, check the logs with `g-dev logs` and fix the issue.
+- Do not ask for permission to proceed with a plan if in build mode. Execute the plan directly.

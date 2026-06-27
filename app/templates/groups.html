@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>Badges</h1>
+    <div class="badges-grid">
+        {% for badge in badges %}
+            <div class="badge-card">
+                <h2 class="badge-family">{{ badge.family }}</h2>
+                <a href="{{ url_for('pages.family_detail', family_name=badge.family) }}" class="badge-link">
+                    {% if badge.representative_plant %}
+                        {% set image_url, image_width, image_height = badge.representative_plant.get_image_info(300) %}
+                        <div class="badge-circle">
+                            <img src="{{ image_url }}" alt="{{ badge.representative_plant.name }}">
+                        </div>
+                        <span class="badge-plant-name">{{ badge.representative_plant.name }}</span>
+                    {% else %}
+                        <div class="badge-circle badge-empty">
+                            <span>?</span>
+                        </div>
+                        <span class="badge-plant-name">No plants yet</span>
+                    {% endif %}
+                </a>
+                {% if badge.undiscovered is not none and badge.undiscovered > 0 %}
+                    <div class="badge-undiscovered">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        <span>{{ badge.undiscovered }} not yet found in this category!</span>
+                    </div>
+                {% endif %}
+            </div>
+        {% else %}
+            <p>No badges yet. <a href="{{ url_for('pages.add_plant') }}">Add some plants</a> to earn badges!</p>
+        {% endfor %}
+    </div>
+{% endblock %}

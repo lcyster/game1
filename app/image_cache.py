@@ -14,7 +14,7 @@ def get_cached_image_path(plant: Plant, size: int = 300) -> Path:
     return CACHE_DIRECTORY / directory_name / f'{directory_name}_{size}x{size}_{timestamp}.jpg'
 
 
-def download_and_cache(image_url: str, cache_path: Path, size: int) -> Path:
+def download_and_cache(image_url: str, cache_path: Path, size: int) -> tuple[Path, int, int]:
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
     }
@@ -22,23 +22,31 @@ def download_and_cache(image_url: str, cache_path: Path, size: int) -> Path:
     response.raise_for_status()
 
     with Image.open(BytesIO(response.content)) as image:
-        image.thumbnail((size, size))
+        source_width, source_height = image.size
+        actual_size = min(size, source_width, source_height)
+        image.thumbnail((actual_size, actual_size))
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         image.save(cache_path, 'JPEG', quality=85)
+        final_width, final_height = image.size
 
-    return cache_path
+    return cache_path, final_width, final_height
 
 
-def get_or_create_cached_image(plant: Plant, size: int = 300) -> Path:
+def get_or_create_cached_image(plant: Plant, size: int = 300) -> tuple[Path, int, int]:
     cache_path = get_cached_image_path(plant, size)
     if cache_path.exists():
-        return cache_path
+        with Image.open(cache_path) as image:
+            width, height = image.size
+        return cache_path, width, height
 
     if not plant.image_source_url:
         from flask import current_app
         static_folder = current_app.static_folder
         if static_folder is None:
             raise RuntimeError("Static folder not configured")
-        return Path(static_folder) / 'placeholder.png'
+        placeholder_path = Path(static_folder) / 'placeholder.png'
+        with Image.open(placeholder_path) as image:
+            width, height = image.size
+        return placeholder_path, width, height
 
     return download_and_cache(plant.image_source_url, cache_path, size)
