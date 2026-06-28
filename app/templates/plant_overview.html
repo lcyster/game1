@@ -46,26 +46,39 @@
         </div>
     </div>
 
-    {% if distribution_countries %}
+    {% set has_distribution = distribution_countries and distribution_countries|length > 0 %}
+    {% set has_photo_location = plant.added_lat is not none and plant.added_lng is not none %}
+    {% if has_distribution or has_photo_location %}
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         (function() {
             var nativeCountries = {{ distribution_countries | tojson }};
-            if (!nativeCountries || nativeCountries.length === 0) return;
+            var photoLat = {{ plant.added_lat | tojson }};
+            var photoLng = {{ plant.added_lng | tojson }};
 
             var mapElement = document.getElementById('distribution-map');
             if (!mapElement) return;
+
+            var defaultCenter = photoLat && photoLng ? [photoLat, photoLng] : [20, 0];
+            var defaultZoom = photoLat && photoLng ? 6 : 2;
 
             var map = L.map('distribution-map', {
                 scrollWheelZoom: false,
                 zoomControl: true,
                 attributionControl: false
-            }).setView([20, 0], 2);
+            }).setView(defaultCenter, defaultZoom);
 
             L.tileLayer('https://{s}.basemaps.cartocdn.com/light_noborders/{z}/{x}/{y}{r}.png', {
-                maxZoom: 6,
+                maxZoom: 18,
                 minZoom: 1
             }).addTo(map);
+
+            if (photoLat && photoLng) {
+                L.marker([photoLat, photoLng]).addTo(map)
+                    .bindPopup('Photo location').openPopup();
+            }
+
+            if (!nativeCountries || nativeCountries.length === 0) return;
 
             var countryStyle = {
                 fillColor: '#e0e0e0',
@@ -102,7 +115,7 @@
                             }
                         }
                     }).addTo(map);
-                    if (nativeBounds.isValid()) {
+                    if (!photoLat && nativeBounds.isValid()) {
                         map.fitBounds(nativeBounds, { padding: [20, 20] });
                     }
                 })

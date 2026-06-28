@@ -1,123 +1,135 @@
 from typing import Any
 
-TDWG_REGION_TO_ALPHA3: dict[str, list[str]] = {
-    "Northern America": ["CAN", "USA", "GRL", "SPM"],
-    "Mexico": ["MEX"],
-    "Central America": ["GTM", "BLZ", "HND", "SLV", "NIC", "CRI", "PAN"],
-    "Caribbean": [
-        "BHS", "CUB", "JAM", "HTI", "DOM", "PRI", "TTO", "BRB", "ATG", "DMA",
-        "GRD", "KNA", "LCA", "VCT", "SXM", "ABW", "CUW", "CYM", "MAF", "VIR",
-        "VGB", "AIA", "BMU", "TCA",
-    ],
-    "Northern South America": ["VEN", "COL", "GUY", "SUR", "GUF"],
-    "Western South America": ["ECU", "PER", "BOL"],
-    "Brazil": ["BRA"],
-    "Southern South America": ["CHL", "ARG", "PRY", "URY"],
-    "Northern Europe": ["SWE", "NOR", "FIN", "DNK", "ISL", "GBR", "IRL", "EST", "LVA", "LTU", "FRO"],
-    "Middle Europe": ["DEU", "FRA", "NLD", "BEL", "LUX", "CHE", "AUT", "POL", "CZE", "SVK", "HUN", "LIE"],
-    "Southwestern Europe": ["ESP", "PRT", "GIB", "AND", "MCO"],
-    "Southeastern Europe": [
-        "ITA", "HRV", "BIH", "SRB", "MNE", "MKD", "ALB", "GRC", "BGR", "ROU", "SVN",
-    ],
-    "Eastern Europe": ["RUS", "UKR", "BLR", "MDA"],
-    "Northern Africa": ["MAR", "DZA", "TUN", "LBY", "EGY", "ESH"],
-    "Macaronesia": ["CPV"],
-    "West Tropical Africa": [
-        "SEN", "GMB", "MLI", "BFA", "GIN", "SLE", "LBR", "CIV", "GHA", "TGO",
-        "BEN", "NER", "NGA", "MRT",
-    ],
-    "West-Central Tropical Africa": ["TCD", "CMR", "CAF", "COG", "COD", "GNQ", "GAB", "STP"],
-    "Northeast Tropical Africa": ["SDN", "ERI", "DJI", "SOM", "ETH"],
-    "East Tropical Africa": ["KEN", "UGA", "TZA", "BDI", "RWA"],
-    "Southern Africa": ["ZAF", "NAM", "BWA", "SWZ", "LSO"],
-    "South Tropical Africa": ["AGO", "ZMW", "MWI", "MOZ", "ZWE"],
-    "Western Indian Ocean": ["MDG", "MUS", "SYC", "COM", "MYT", "REU"],
-    "Arabian Peninsula": ["SAU", "YEM", "OMN", "ARE", "QAT", "BHR", "KWT"],
-    "Western Asia": ["TUR", "SYR", "LBN", "ISR", "JOR", "IRQ", "IRN", "CYP"],
-    "Caucasus": ["GEO", "ARM", "AZE"],
-    "Central Asia": ["KAZ", "UZB", "TKM", "TJK", "KGZ", "AFG"],
-    "Siberia": ["RUS"],
-    "Russian Far East": ["RUS"],
-    "China": ["CHN"],
-    "Mongolia": ["MNG"],
-    "Eastern Asia": ["JPN", "KOR", "PRK", "TWN"],
-    "Indian Subcontinent": ["IND", "PAK", "BGD", "LKA", "NPL", "BTN", "MDV"],
-    "Indo-China": ["THA", "VNM", "KHM", "LAO", "MMR"],
-    "Malesia": ["MYS", "IDN", "PHL", "BRN", "TLS", "SGP"],
-    "Papua New Guinea": ["PNG"],
-    "Australia": ["AUS"],
-    "New Zealand": ["NZL"],
-    "Pacific": [
-        "FJI", "WSM", "TON", "VUT", "SLB", "KIR", "MHL", "FSM", "PLW", "NRU",
-        "COK", "NIU", "NFK", "TKL", "PYF", "GUM", "MNP", "ASM",
-    ],
-    "Subarctic America": ["CAN", "GRL"],
-    "Subantarctic Islands": ["ATA"],
+COUNTRY_NAME_TO_ALPHA3: dict[str, str] = {
+    "Afghanistan": "AFG", "Albania": "ALB", "Algeria": "DZA", "Angola": "AGO",
+    "Argentina": "ARG", "Armenia": "ARM", "Australia": "AUS", "Austria": "AUT",
+    "Azerbaijan": "AZE", "Bahamas": "BHS", "Bahrain": "BHR", "Bangladesh": "BGD",
+    "Belarus": "BLR", "Belgium": "BEL", "Belize": "BLZ", "Benin": "BEN",
+    "Bhutan": "BTN", "Bolivia": "BOL", "Bosnia and Herzegovina": "BIH", "Botswana": "BWA",
+    "Brazil": "BRA", "Brunei": "BRN", "Bulgaria": "BGR", "Burkina Faso": "BFA",
+    "Burundi": "BDI", "Cambodia": "KHM", "Cameroon": "CMR", "Canada": "CAN",
+    "Cape Verde": "CPV", "Central African Republic": "CAF", "Chad": "TCD", "Chile": "CHL",
+    "China": "CHN", "Colombia": "COL", "Comoros": "COM", "Congo": "COG",
+    "Costa Rica": "CRI", "Croatia": "HRV", "Cuba": "CUB", "Cyprus": "CYP",
+    "Czechia": "CZE", "Czechoslovakia": "CZE",
+    "Democratic Republic of the Congo": "COD", "Denmark": "DNK", "Djibouti": "DJI",
+    "Dominican Republic": "DOM", "East Timor": "TLS", "Ecuador": "ECU", "Egypt": "EGY",
+    "El Salvador": "SLV", "Equatorial Guinea": "GNQ", "Eritrea": "ERI", "Estonia": "EST",
+    "Eswatini": "SWZ", "Ethiopia": "ETH", "Fiji": "FJI", "Finland": "FIN",
+    "France": "FRA", "Gabon": "GAB", "Gambia": "GMB", "Georgia": "GEO", "Germany": "DEU",
+    "Ghana": "GHA", "Great Britain": "GBR", "Greece": "GRC", "Guatemala": "GTM",
+    "Guinea": "GIN", "Guinea-Bissau": "GNB", "Guyana": "GUY", "Haiti": "HTI",
+    "Honduras": "HND", "Hungary": "HUN", "Iceland": "ISL", "India": "IND",
+    "Indonesia": "IDN", "Iran": "IRN", "Iraq": "IRQ", "Ireland": "IRL", "Israel": "ISR",
+    "Italy": "ITA", "Ivory Coast": "CIV", "Jamaica": "JAM", "Japan": "JPN",
+    "Jordan": "JOR", "Kazakhstan": "KAZ", "Kenya": "KEN", "Kuwait": "KWT",
+    "Kyrgyzstan": "KGZ", "Laos": "LAO", "Latvia": "LVA", "Lebanon": "LBN",
+    "Lesotho": "LSO", "Liberia": "LBR", "Libya": "LBY", "Lithuania": "LTU",
+    "Luxembourg": "LUX", "Madagascar": "MDG", "Malawi": "MWI", "Malaysia": "MYS",
+    "Maldives": "MDV", "Mali": "MLI", "Mauritania": "MRT", "Mauritius": "MUS",
+    "Mexico": "MEX", "Moldova": "MDA", "Mongolia": "MNG", "Montenegro": "MNE",
+    "Morocco": "MAR", "Mozambique": "MOZ", "Myanmar": "MMR", "Namibia": "NAM",
+    "Nepal": "NPL", "Netherlands": "NLD", "New Zealand": "NZL", "Nicaragua": "NIC",
+    "Niger": "NER", "Nigeria": "NGA", "North Korea": "PRK", "North Macedonia": "MKD",
+    "Norway": "NOR", "Oman": "OMN", "Pakistan": "PAK", "Panama": "PAN",
+    "Papua New Guinea": "PNG", "Paraguay": "PRY", "Peru": "PER", "Philippines": "PHL",
+    "Poland": "POL", "Portugal": "PRT", "Qatar": "QAT", "Romania": "ROU", "Russia": "RUS",
+    "Rwanda": "RWA", "Saudi Arabia": "SAU", "Senegal": "SEN", "Serbia": "SRB",
+    "Sierra Leone": "SLE", "Singapore": "SGP", "Slovakia": "SVK", "Slovenia": "SVN",
+    "Somalia": "SOM", "South Africa": "ZAF", "South Korea": "KOR", "South Sudan": "SSD",
+    "Spain": "ESP", "Sri Lanka": "LKA", "Sudan": "SDN", "Suriname": "SUR",
+    "Sweden": "SWE", "Switzerland": "CHE", "Syria": "SYR", "Taiwan": "TWN",
+    "Tajikistan": "TJK", "Tanzania": "TZA", "Thailand": "THA", "Togo": "TGO",
+    "Trinidad and Tobago": "TTO", "Tunisia": "TUN", "Turkey": "TUR",
+    "Turkmenistan": "TKM", "Uganda": "UGA", "Ukraine": "UKR",
+    "United Arab Emirates": "ARE", "United Kingdom": "GBR", "United States": "USA",
+    "Uruguay": "URY", "Uzbekistan": "UZB", "Venezuela": "VEN", "Vietnam": "VNM",
+    "Yemen": "YEM", "Zambia": "ZMB", "Zimbabwe": "ZWE",
 }
 
-ALPHA3_TO_NAME: dict[str, str] = {
-    "CAN": "Canada", "USA": "United States", "GRL": "Greenland", "SPM": "Saint Pierre and Miquelon",
-    "MEX": "Mexico", "GTM": "Guatemala", "BLZ": "Belize", "HND": "Honduras", "SLV": "El Salvador",
-    "NIC": "Nicaragua", "CRI": "Costa Rica", "PAN": "Panama",
-    "BHS": "Bahamas", "CUB": "Cuba", "JAM": "Jamaica", "HTI": "Haiti", "DOM": "Dominican Republic",
-    "PRI": "Puerto Rico", "TTO": "Trinidad and Tobago", "BRB": "Barbados", "ATG": "Antigua and Barbuda",
-    "DMA": "Dominica", "GRD": "Grenada", "KNA": "Saint Kitts and Nevis", "LCA": "Saint Lucia",
-    "VCT": "Saint Vincent and the Grenadines", "ABW": "Aruba", "CUW": "Curaçao", "CYM": "Cayman Islands",
-    "VIR": "U.S. Virgin Islands", "VGB": "British Virgin Islands", "BMU": "Bermuda",
-    "VEN": "Venezuela", "COL": "Colombia", "GUY": "Guyana", "SUR": "Suriname", "GUF": "French Guiana",
-    "ECU": "Ecuador", "PER": "Peru", "BOL": "Bolivia", "BRA": "Brazil",
-    "CHL": "Chile", "ARG": "Argentina", "PRY": "Paraguay", "URY": "Uruguay",
-    "SWE": "Sweden", "NOR": "Norway", "FIN": "Finland", "DNK": "Denmark", "ISL": "Iceland",
-    "GBR": "United Kingdom", "IRL": "Ireland", "EST": "Estonia", "LVA": "Latvia", "LTU": "Lithuania",
-    "FRO": "Faroe Islands",
-    "DEU": "Germany", "FRA": "France", "NLD": "Netherlands", "BEL": "Belgium", "LUX": "Luxembourg",
-    "CHE": "Switzerland", "AUT": "Austria", "POL": "Poland", "CZE": "Czechia", "SVK": "Slovakia",
-    "HUN": "Hungary", "LIE": "Liechtenstein",
-    "ESP": "Spain", "PRT": "Portugal", "GIB": "Gibraltar", "AND": "Andorra", "MCO": "Monaco",
-    "ITA": "Italy", "HRV": "Croatia", "BIH": "Bosnia and Herzegovina", "SRB": "Serbia",
-    "MNE": "Montenegro", "MKD": "North Macedonia", "ALB": "Albania", "GRC": "Greece",
-    "BGR": "Bulgaria", "ROU": "Romania", "SVN": "Slovenia",
-    "RUS": "Russia", "UKR": "Ukraine", "BLR": "Belarus", "MDA": "Moldova",
-    "MAR": "Morocco", "DZA": "Algeria", "TUN": "Tunisia", "LBY": "Libya", "EGY": "Egypt", "ESH": "Western Sahara",
-    "CPV": "Cape Verde",
-    "SEN": "Senegal", "GMB": "Gambia", "MLI": "Mali", "BFA": "Burkina Faso", "GIN": "Guinea",
-    "SLE": "Sierra Leone", "LBR": "Liberia", "CIV": "Ivory Coast", "GHA": "Ghana", "TGO": "Togo",
-    "BEN": "Benin", "NER": "Niger", "NGA": "Nigeria", "MRT": "Mauritania",
-    "TCD": "Chad", "CMR": "Cameroon", "CAF": "Central African Republic", "COG": "Republic of the Congo",
-    "COD": "Democratic Republic of the Congo", "GNQ": "Equatorial Guinea", "GAB": "Gabon", "STP": "São Tomé and Príncipe",
-    "SDN": "Sudan", "ERI": "Eritrea", "DJI": "Djibouti", "SOM": "Somalia", "ETH": "Ethiopia",
-    "KEN": "Kenya", "UGA": "Uganda", "TZA": "Tanzania", "BDI": "Burundi", "RWA": "Rwanda",
-    "ZAF": "South Africa", "NAM": "Namibia", "BWA": "Botswana", "SWZ": "Eswatini", "LSO": "Lesotho",
-    "AGO": "Angola", "ZMW": "Zambia", "MWI": "Malawi", "MOZ": "Mozambique", "ZWE": "Zimbabwe",
-    "MDG": "Madagascar", "MUS": "Mauritius", "SYC": "Seychelles", "COM": "Comoros",
-    "SAU": "Saudi Arabia", "YEM": "Yemen", "OMN": "Oman", "ARE": "United Arab Emirates",
-    "QAT": "Qatar", "BHR": "Bahrain", "KWT": "Kuwait",
-    "TUR": "Turkey", "SYR": "Syria", "LBN": "Lebanon", "ISR": "Israel", "JOR": "Jordan",
-    "IRQ": "Iraq", "IRN": "Iran", "CYP": "Cyprus",
-    "GEO": "Georgia", "ARM": "Armenia", "AZE": "Azerbaijan",
-    "KAZ": "Kazakhstan", "UZB": "Uzbekistan", "TKM": "Turkmenistan", "TJK": "Tajikistan",
-    "KGZ": "Kyrgyzstan", "AFG": "Afghanistan",
-    "CHN": "China", "MNG": "Mongolia",
-    "JPN": "Japan", "KOR": "South Korea", "PRK": "North Korea", "TWN": "Taiwan",
-    "IND": "India", "PAK": "Pakistan", "BGD": "Bangladesh", "LKA": "Sri Lanka", "NPL": "Nepal",
-    "BTN": "Bhutan", "MDV": "Maldives",
-    "THA": "Thailand", "VNM": "Vietnam", "KHM": "Cambodia", "LAO": "Laos", "MMR": "Myanmar",
-    "MYS": "Malaysia", "IDN": "Indonesia", "PHL": "Philippines", "BRN": "Brunei", "TLS": "Timor-Leste", "SGP": "Singapore",
-    "PNG": "Papua New Guinea", "AUS": "Australia", "NZL": "New Zealand",
-    "FJI": "Fiji", "WSM": "Samoa", "TON": "Tonga", "VUT": "Vanuatu", "SLB": "Solomon Islands",
-    "KIR": "Kiribati", "MHL": "Marshall Islands", "FSM": "Micronesia", "PLW": "Palau", "NRU": "Nauru",
-    "COK": "Cook Islands", "NIU": "Niue", "NFK": "Norfolk Island", "PYF": "French Polynesia",
-    "GUM": "Guam", "MNP": "Northern Mariana Islands", "ASM": "American Samoa",
-    "ATA": "Antarctica",
+EXACT_TREFLE_TO_ALPHA3: dict[str, str] = {
+    "Alabama": "USA", "Alaska": "USA", "Arizona": "USA", "Arkansas": "USA",
+    "California": "USA", "Colorado": "USA", "Connecticut": "USA", "Delaware": "USA",
+    "Florida": "USA", "Georgia": "USA", "Hawaii": "USA", "Idaho": "USA", "Illinois": "USA",
+    "Indiana": "USA", "Iowa": "USA", "Kansas": "USA", "Kentucky": "USA", "Louisiana": "USA",
+    "Maine": "USA", "Maryland": "USA", "Massachusetts": "USA", "Michigan": "USA",
+    "Minnesota": "USA", "Mississippi": "USA", "Missouri": "USA", "Montana": "USA",
+    "Nebraska": "USA", "Nevada": "USA", "New Hampshire": "USA", "New Jersey": "USA",
+    "New Mexico": "USA", "New York": "USA", "North Carolina": "USA", "North Dakota": "USA",
+    "Ohio": "USA", "Oklahoma": "USA", "Oregon": "USA", "Pennsylvania": "USA",
+    "Rhode Island": "USA", "South Carolina": "USA", "South Dakota": "USA", "Tennessee": "USA",
+    "Texas": "USA", "Utah": "USA", "Vermont": "USA", "Virginia": "USA", "Washington": "USA",
+    "West Virginia": "USA", "Wisconsin": "USA", "Wyoming": "USA",
+    "Baleares": "ESP", "Canary Is.": "ESP", "Corse": "FRA", "Sardegna": "ITA",
+    "Sicilia": "ITA", "Korea": "KOR", "Tristan da Cunha": "SHN",
+    "Greenland": "GRL", "Puerto Rico": "PRI", "Haiti": "HTI", "Jamaica": "JAM",
+    "New South Wales": "AUS", "Queensland": "AUS", "South Australia": "AUS",
+    "Tasmania": "AUS", "Victoria": "AUS", "Western Australia": "AUS",
 }
 
+PREFIX_TREFLE_TO_ALPHA3: list[tuple[str, str]] = sorted(
+    [
+        ("Mexico", "MEX"), ("Argentina", "ARG"), ("Australia", "AUS"), ("Brazil", "BRA"),
+        ("China", "CHN"), ("India", "IND"), ("Russia", "RUS"), ("New Zealand", "NZL"),
+        ("Japan", "JPN"), ("Indonesia", "IDN"), ("Colombia", "COL"), ("Chile", "CHL"),
+        ("Peru", "PER"), ("Ecuador", "ECU"), ("Venezuela", "VEN"), ("Bolivia", "BOL"),
+        ("Paraguay", "PRY"), ("Guyana", "GUY"), ("Suriname", "SUR"),
+        ("South Africa", "ZAF"), ("Nigeria", "NGA"), ("Kenya", "KEN"),
+        ("Tanzania", "TZA"), ("Ethiopia", "ETH"), ("Ghana", "GHA"),
+        ("Cameroon", "CMR"), ("Mozambique", "MOZ"), ("Madagascar", "MDG"),
+        ("Zimbabwe", "ZWE"), ("Angola", "AGO"), ("Zambia", "ZMB"),
+        ("Senegal", "SEN"), ("Mali", "MLI"), ("Burkina Faso", "BFA"),
+        ("Niger", "NER"), ("Guinea", "GIN"), ("Ivory Coast", "CIV"),
+        ("Benin", "BEN"), ("Togo", "TGO"), ("Sierra Leone", "SLE"),
+        ("Liberia", "LBR"), ("Gambia", "GMB"), ("Mauritania", "MRT"),
+        ("Namibia", "NAM"), ("Botswana", "BWA"), ("Lesotho", "LSO"),
+        ("Eswatini", "SWZ"), ("Gabon", "GAB"), ("Congo", "COG"),
+        ("Uganda", "UGA"), ("Rwanda", "RWA"), ("Burundi", "BDI"),
+        ("Malawi", "MWI"), ("Sudan", "SDN"), ("Somalia", "SOM"),
+        ("Djibouti", "DJI"), ("Eritrea", "ERI"),
+        ("Thailand", "THA"), ("Vietnam", "VNM"), ("Cambodia", "KHM"),
+        ("Laos", "LAO"), ("Myanmar", "MMR"), ("Malaysia", "MYS"),
+        ("Philippines", "PHL"), ("Nepal", "NPL"), ("Pakistan", "PAK"),
+        ("Bangladesh", "BGD"), ("Sri Lanka", "LKA"), ("Afghanistan", "AFG"),
+        ("Iran", "IRN"), ("Iraq", "IRQ"), ("Turkey", "TUR"),
+        ("Saudi Arabia", "SAU"), ("Yemen", "YEM"), ("Oman", "OMN"),
+        ("Syria", "SYR"), ("Jordan", "JOR"), ("Israel", "ISR"),
+        ("Lebanon", "LBN"), ("Kuwait", "KWT"),
+        ("France", "FRA"), ("Spain", "ESP"), ("Portugal", "PRT"),
+        ("Germany", "DEU"), ("Italy", "ITA"), ("Sweden", "SWE"),
+        ("Norway", "NOR"), ("Finland", "FIN"), ("Poland", "POL"),
+        ("Romania", "ROU"), ("Ukraine", "UKR"), ("Belarus", "BLR"),
+        ("Greece", "GRC"), ("Hungary", "HUN"), ("Austria", "AUT"),
+        ("Switzerland", "CHE"), ("Netherlands", "NLD"), ("Belgium", "BEL"),
+        ("Ireland", "IRL"), ("Denmark", "DNK"), ("Croatia", "HRV"),
+        ("Serbia", "SRB"), ("Bosnia and Herzegovina", "BIH"),
+        ("Albania", "ALB"), ("Bulgaria", "BGR"), ("Slovakia", "SVK"),
+        ("Czechia", "CZE"), ("Lithuania", "LTU"), ("Latvia", "LVA"),
+        ("Estonia", "EST"),
+        ("Morocco", "MAR"), ("Tunisia", "TUN"), ("Libya", "LBY"),
+        ("Egypt", "EGY"),
+        ("Cuba", "CUB"), ("Dominican Republic", "DOM"),
+        ("Costa Rica", "CRI"), ("Panama", "PAN"), ("Guatemala", "GTM"),
+        ("Honduras", "HND"), ("Nicaragua", "NIC"), ("Belize", "BLZ"),
+        ("El Salvador", "SLV"),
+    ],
+    key=lambda pair: len(pair[0]),
+    reverse=True,
+)
 
-def region_names_to_country_codes(region_names: list[str]) -> list[str]:
-    alpha3_codes: set[str] = set()
-    for region_name in region_names:
-        codes = TDWG_REGION_TO_ALPHA3.get(region_name, [])
-        alpha3_codes.update(codes)
-    return sorted(alpha3_codes)
+
+def trefle_region_to_alpha3(region_name: str) -> str | None:
+    if region_name in EXACT_TREFLE_TO_ALPHA3:
+        return EXACT_TREFLE_TO_ALPHA3[region_name]
+
+    if region_name in COUNTRY_NAME_TO_ALPHA3:
+        return COUNTRY_NAME_TO_ALPHA3[region_name]
+
+    for prefix, alpha3 in PREFIX_TREFLE_TO_ALPHA3:
+        if region_name.startswith(prefix):
+            return alpha3
+
+    return None
 
 
 def get_distribution_country_codes(trefle_data: dict[str, Any]) -> list[str]:
@@ -133,13 +145,15 @@ def get_distribution_country_codes(trefle_data: dict[str, Any]) -> list[str]:
     if not isinstance(native, list):
         return []
 
-    region_names: list[str] = []
+    alpha3_codes: set[str] = set()
     for entry in native:
-        if isinstance(entry, str):
-            region_names.append(entry)
-        elif isinstance(entry, dict):
-            name = entry.get("name")
-            if isinstance(name, str):
-                region_names.append(name)
+        region_name = entry if isinstance(entry, str) else (
+            entry.get("name") if isinstance(entry, dict) else None
+        )
+        if not isinstance(region_name, str):
+            continue
+        code = trefle_region_to_alpha3(region_name)
+        if code:
+            alpha3_codes.add(code)
 
-    return region_names_to_country_codes(region_names)
+    return sorted(alpha3_codes)
