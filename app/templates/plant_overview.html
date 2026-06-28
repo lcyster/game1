@@ -1,5 +1,9 @@
 {% extends 'base.html' %}
 
+{% block head %}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+{% endblock %}
+
 {% block content %}
     <h1>{{ plant.name }}</h1>
 
@@ -23,6 +27,8 @@
                 {% if plant_info.distribution.native %}
                     <p><strong>Native To:</strong> {{ plant_info.distribution.native|join(', ') }}</p>
                     <p>This plant is native to {{ plant_info.distribution.native|length }} regions, making it {% if plant_info.distribution.native|length > 10 %}very common.{% elif plant_info.distribution.native|length > 5 %}moderately common.{% else %}relatively rare.{% endif %}</p>
+
+                    <div id="distribution-map" class="distribution-map"></div>
                 {% else %}
                     <p>No distribution information available.</p>
                 {% endif %}
@@ -39,4 +45,71 @@
             {% endif %}
         </div>
     </div>
+
+    {% if distribution_countries %}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        (function() {
+            var nativeCountries = {{ distribution_countries | tojson }};
+            if (!nativeCountries || nativeCountries.length === 0) return;
+
+            var mapElement = document.getElementById('distribution-map');
+            if (!mapElement) return;
+
+            var map = L.map('distribution-map', {
+                scrollWheelZoom: false,
+                zoomControl: true,
+                attributionControl: false
+            }).setView([20, 0], 2);
+
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_noborders/{z}/{x}/{y}{r}.png', {
+                maxZoom: 6,
+                minZoom: 1
+            }).addTo(map);
+
+            var countryStyle = {
+                fillColor: '#e0e0e0',
+                weight: 1,
+                opacity: 1,
+                color: '#ccc',
+                fillOpacity: 1
+            };
+
+            var nativeStyle = {
+                fillColor: '#2ecc71',
+                weight: 1,
+                opacity: 1,
+                color: '#27ae60',
+                fillOpacity: 0.7
+            };
+
+            fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json')
+                .then(function(response) { return response.json(); })
+                .then(function(data) {
+                    map.invalidateSize();
+                    var nativeBounds = L.latLngBounds([]);
+                    L.geoJSON(data, {
+                        style: function(feature) {
+                            var code = feature.id;
+                            if (nativeCountries.indexOf(code) !== -1) {
+                                return nativeStyle;
+                            }
+                            return countryStyle;
+                        },
+                        onEachFeature: function(feature, layer) {
+                            if (nativeCountries.indexOf(feature.id) !== -1) {
+                                nativeBounds.extend(layer.getBounds());
+                            }
+                        }
+                    }).addTo(map);
+                    if (nativeBounds.isValid()) {
+                        map.fitBounds(nativeBounds, { padding: [20, 20] });
+                    }
+                })
+                .catch(function() {
+                    mapElement.innerHTML = '<p class="map-error">Unable to load map data.</p>';
+                });
+        })();
+    </script>
+    {% endif %}
 {% endblock %}

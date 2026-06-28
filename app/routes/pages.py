@@ -6,6 +6,7 @@ from flask import Blueprint, Response, jsonify, render_template, send_from_direc
 
 from app.models import Plant, db
 from app.image_cache import get_or_create_cached_image
+from app.distribution_map import get_distribution_country_codes
 
 
 pages_blueprint = Blueprint('pages', __name__)
@@ -80,7 +81,8 @@ def plant_overview(plant_id: int) -> str:
                 db.session.commit()
 
     image_path, image_width, image_height = get_or_create_cached_image(plant)
-    return render_template('plant_overview.html', plant=plant, trefle_data=trefle_data, wiki_summary=wiki_summary, image_width=image_width, image_height=image_height)
+    distribution_countries = get_distribution_country_codes(trefle_data)
+    return render_template('plant_overview.html', plant=plant, trefle_data=trefle_data, wiki_summary=wiki_summary, image_width=image_width, image_height=image_height, distribution_countries=distribution_countries)
 
 
 @pages_blueprint.route('/cache/<int:plant_id>/<int:size>')
