@@ -28,6 +28,15 @@ Before reporting back to the user, ensure you have thoroughly investigated the i
 - To check the status of the server, use the command `g-dev status`.
 - To see the server logs, use the command `g-dev logs`.
 
+## Windows Setup
+
+The project uses Nix flakes and direnv on Linux/macOS. On Windows, equivalent PowerShell scripts are provided:
+
+- `setup-env.ps1` — creates a `.venv`, installs Python dependencies, sets `FLASK_APP=app`, and sources `.env` files.
+- `.envrc.ps1` — auto-activates the environment when entering the project directory (add to `$PROFILE`).
+
+Run `.\setup-env.ps1 -Install` once to bootstrap the environment.
+
 ## Workflow
 
 - After making **any** code change, you **must** immediately restart the server using `g-dev restart`. Do not skip this step.

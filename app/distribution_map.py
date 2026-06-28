@@ -133,4 +133,13 @@ def get_distribution_country_codes(trefle_data: dict[str, Any]) -> list[str]:
     if not isinstance(native, list):
         return []
 
-    return region_names_to_country_codes(native)
+    region_names: list[str] = []
+    for entry in native:
+        if isinstance(entry, str):
+            region_names.append(entry)
+        elif isinstance(entry, dict):
+            name = entry.get("name")
+            if isinstance(name, str):
+                region_names.append(name)
+
+    return region_names_to_country_codes(region_names)
